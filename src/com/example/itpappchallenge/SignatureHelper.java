@@ -20,6 +20,7 @@ public class SignatureHelper {
 			builder.append('&');
 		}
 		
+		// Remove the last '&' between parameters and Shared secret
 		if(builder.length() > 0){
 			builder.setLength(builder.length() - 1);
 		}

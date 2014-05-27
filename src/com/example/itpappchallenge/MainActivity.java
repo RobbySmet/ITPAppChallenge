@@ -27,5 +27,6 @@ public class MainActivity extends ActionBarActivity implements OnMapActionsListe
 	@Override
 	public void onAddPlaceClicked() {
 		// Show 'add place' fragment
+		
 	}
 }

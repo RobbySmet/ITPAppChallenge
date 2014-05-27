@@ -60,6 +60,8 @@ public class MapFragment extends Fragment implements LocationCallback, OnMarkerC
 
 	@Override
 	public void onAttach(Activity activity) {
+		super.onAttach(activity);
+		
 		try {
 			mCallback = (OnMapActionsListener) activity;
 		} catch (ClassCastException e) {
@@ -204,12 +206,19 @@ public class MapFragment extends Fragment implements LocationCallback, OnMarkerC
 			LatLng location = new LatLng(place.getLatitude(),
 					place.getLongitude());
 
+			int iconResource;
+			
+			if(place.isPublic()){
+				iconResource = R.drawable.ic_toilets_public;
+			}else{
+				iconResource = R.drawable.ic_toilets;
+			}
+			
 			mMap.addMarker(new MarkerOptions()
 					.position(location)
 					.title(place.getName())
 					.snippet(place.getAddress())
-					.icon(BitmapDescriptorFactory
-							.fromResource(R.drawable.ic_toilets)));
+					.icon(BitmapDescriptorFactory.fromResource(iconResource)));
 		}
 	}
 
