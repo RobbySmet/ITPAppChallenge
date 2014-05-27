@@ -1,9 +1,11 @@
 package com.example.itpappchallenge;
 
+import com.example.itpappchallenge.MapFragment.OnMapActionsListener;
+
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends ActionBarActivity implements OnMapActionsListener {
 
 	private MapFragment map;
 
@@ -20,5 +22,10 @@ public class MainActivity extends ActionBarActivity {
 			map = (MapFragment) getSupportFragmentManager()
 					.findFragmentByTag("mapfragment_tag");
 		}
+	}
+
+	@Override
+	public void onAddPlaceClicked() {
+		// Show 'add place' fragment
 	}
 }

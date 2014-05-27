@@ -4,5 +4,8 @@
     <string name="app_name">ITP app challenge</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
-
+    <string name="loading_toilets">Toiletten ophalen</string>
+    <string name="loading">Even geduld aub...</string>
+    <string name="add_place">Plaats toevoegen</string>
+	<string name="error">Er is iets misgelopen.</string>
 </resources>

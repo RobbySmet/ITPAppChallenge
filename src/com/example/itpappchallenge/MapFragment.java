@@ -3,12 +3,16 @@ package com.example.itpappchallenge;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
@@ -48,13 +52,46 @@ public class MapFragment extends Fragment implements LocationCallback, OnMarkerC
 	private static View view;
 	private static GoogleMap mMap;
 
+	private OnMapActionsListener mCallback;
+
+	public interface OnMapActionsListener {
+		public void onAddPlaceClicked();
+	}
+
+	@Override
+	public void onAttach(Activity activity) {
+		try {
+			mCallback = (OnMapActionsListener) activity;
+		} catch (ClassCastException e) {
+			throw new ClassCastException(activity.toString()
+					+ " must implement OnMapActionsListener");
+		}
+	}
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		mContext = getActivity();
-
+		setHasOptionsMenu(true);
 		getPlacesNearby();
+	}
+
+	@Override
+	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+		inflater.inflate(R.menu.map_menu, menu);
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case R.id.menu_add_place:
+			mCallback.onAddPlaceClicked();
+			return true;
+
+		default:
+			return super.onOptionsItemSelected(item);
+		}
 	}
 
 	@Override
@@ -93,8 +130,9 @@ public class MapFragment extends Fragment implements LocationCallback, OnMarkerC
 	}
 
 	private void getPlacesNearby() {
-		progress = ProgressDialog.show(mContext, "Toiletten ophalen",
-				"Even geduld aub...", true);
+		progress = ProgressDialog.show(mContext,
+				getString(R.string.loading_toilets),
+				getString(R.string.loading), true);
 
 		locationHelper = new LocationHelper(mContext, this);
 		locationHelper.connect(); // returns in onLocationClientConnected
@@ -115,16 +153,12 @@ public class MapFragment extends Fragment implements LocationCallback, OnMarkerC
 	}
 
 	private void moveMapToCurrentLocation(double latitude, double longitude) {
-		CameraUpdate center = CameraUpdateFactory.newLatLng(new LatLng(latitude, longitude));
+		CameraUpdate center = CameraUpdateFactory.newLatLng(new LatLng(
+				latitude, longitude));
 		CameraUpdate zoom = CameraUpdateFactory.zoomTo(15);
 
 		mMap.moveCamera(center);
 		mMap.animateCamera(zoom);
-	}
-
-	private void loadPlaces(double latitude, double longtitude) {
-		// Default = 10km
-		loadPlaces(latitude, longtitude, 10);
 	}
 
 	private void loadPlaces(double latitude, double longitude, int distance) {
@@ -140,11 +174,13 @@ public class MapFragment extends Fragment implements LocationCallback, OnMarkerC
 		RequestQueue queue = VolleySingleton.getInstance(mContext)
 				.getRequestQueue();
 
-		String uri = String.format("http://challenge.itpservices.be/place?latitude=%s&longitude=%s&distance=%s&signature=%s",
+		String uri = String
+				.format("http://challenge.itpservices.be/place?latitude=%s&longitude=%s&distance=%s&signature=%s",
 						latitude, longitude, distance, signature);
 
-		GsonRequest<PlacesResponse> req = new GsonRequest<PlacesResponse>(Method.GET, uri, PlacesResponse.class,
-				createSuccessListener(), createErrorListener());
+		GsonRequest<PlacesResponse> req = new GsonRequest<PlacesResponse>(
+				Method.GET, uri, PlacesResponse.class, createSuccessListener(),
+				createErrorListener());
 
 		queue.add(req);
 	}
@@ -157,8 +193,6 @@ public class MapFragment extends Fragment implements LocationCallback, OnMarkerC
 				progress.dismiss();
 
 				if (response.isSuccess()) {
-					Toast.makeText(mContext, response.getPlaces().size() + " plaatsen ontvangen", Toast.LENGTH_LONG).show();
-					
 					addMarkersToMap(response.getPlaces());
 				}
 			}
@@ -167,16 +201,18 @@ public class MapFragment extends Fragment implements LocationCallback, OnMarkerC
 
 	protected void addMarkersToMap(ArrayList<Place> places) {
 		for (Place place : places) {
-			LatLng location = new LatLng(place.getLatitude(), place.getLongitude());
-			
+			LatLng location = new LatLng(place.getLatitude(),
+					place.getLongitude());
+
 			mMap.addMarker(new MarkerOptions()
-			.position(location)
-			.title(place.getName())
-			.snippet(place.getAddress())
-			.icon(BitmapDescriptorFactory.fromResource(R.drawable.toilets)));
+					.position(location)
+					.title(place.getName())
+					.snippet(place.getAddress())
+					.icon(BitmapDescriptorFactory
+							.fromResource(R.drawable.ic_toilets)));
 		}
 	}
-	
+
 	@Override
 	public boolean onMarkerClick(Marker marker) {
 		marker.showInfoWindow();
@@ -189,7 +225,8 @@ public class MapFragment extends Fragment implements LocationCallback, OnMarkerC
 			@Override
 			public void onErrorResponse(VolleyError error) {
 				progress.dismiss();
-				Toast.makeText(mContext, "Error!", Toast.LENGTH_LONG).show();
+				Toast.makeText(mContext, getString(R.string.error),
+						Toast.LENGTH_LONG).show();
 			}
 		};
 	}
