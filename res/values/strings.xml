@@ -8,4 +8,6 @@
     <string name="loading">Even geduld aub...</string>
     <string name="add_place">Plaats toevoegen</string>
 	<string name="error">Er is iets misgelopen.</string>
+	<string name="name_hint">Naam</string>
+	<string name="address_hint">Straat</string>
 </resources>

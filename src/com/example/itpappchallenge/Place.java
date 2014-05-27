@@ -2,14 +2,18 @@ package com.example.itpappchallenge;
 
 import java.util.Date;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
+import com.google.android.gms.maps.model.LatLng;
 import com.google.gson.annotations.SerializedName;
 
-public class Place {
+public class Place implements Parcelable {
 
 	private int id;
 	private String name;
 	private int checkin_count;
-	
+
 	@SerializedName("public")
 	private boolean isPublic;
 	private String address;
@@ -18,9 +22,9 @@ public class Place {
 	private long created_at;
 	private double latitude, longitude;
 	private double distance;
-	
-	public Place(){
-		
+
+	public Place(Parcel in) {
+		readFromParcel(in);
 	}
 
 	public int getId() {
@@ -110,4 +114,48 @@ public class Place {
 	public void setCreated_at(long created_at) {
 		this.created_at = created_at;
 	}
+
+	public LatLng getLatLng() {
+		return new LatLng(latitude, longitude);
+	}
+
+	@Override
+	public int describeContents() {
+		return 0;
+	}
+
+	@Override
+	public void writeToParcel(Parcel dest, int flags) {
+		dest.writeInt(id);
+		dest.writeString(name);
+		dest.writeInt(checkin_count);
+		dest.writeByte((byte) (isPublic ? 0x01 : 0x00));
+		dest.writeString(address);
+		dest.writeString(zip);
+		dest.writeString(city);
+		dest.writeLong(created_at);
+		dest.writeDouble(distance);
+	}
+
+	private void readFromParcel(Parcel in) {
+	    id = in.readInt();
+        name = in.readString();
+        checkin_count = in.readInt();
+        isPublic = in.readByte() != 0x00;
+        address = in.readString();
+        zip = in.readString();
+        city = in.readString();
+        created_at = in.readLong();
+        distance = in.readDouble();
+	}
+
+	public static final Parcelable.Creator<Place> CREATOR = new Parcelable.Creator<Place>() {
+		public Place createFromParcel(Parcel in) {
+			return new Place(in);
+		}
+
+		public Place[] newArray(int size) {
+			return new Place[size];
+		}
+	};
 }

@@ -6,6 +6,6 @@
         android:icon="@drawable/ic_action_new_place"
         android:orderInCategory="10"
         android:title="@string/add_place"
-        itp:showAsAction="always"/>
+        itp:showAsAction="always|withText"/>
 
 </menu>

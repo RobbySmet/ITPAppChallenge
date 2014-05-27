@@ -34,25 +34,28 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class MapFragment extends Fragment implements LocationCallback, OnMarkerClickListener {
+public class MapFragment extends Fragment implements LocationCallback,
+		OnMarkerClickListener {
+	private static final String PLACES_KEY = "places";
 	// Parameters to send
-	private static final String DISTANCE_PARAM = "distance";
-	private static final String LONGITUDE_PARAM = "longitude";
-	private static final String LATITUDE_PARAM = "latitude";
+	private static final String DISTANCE_KEY = "distance";
+	private static final String LONGITUDE_KEY = "longitude";
+	private static final String LATITUDE_KEY = "latitude";
 
 	protected static final String TAG = MainActivity.class.getSimpleName();
 
 	private Context mContext;
 
 	private LocationHelper locationHelper;
-	private ProgressDialog progress;
+	private ProgressDialog progressDialog;
 	private double latitude;
 	private double longitude;
 
-	private static View view;
 	private static GoogleMap mMap;
 
 	private OnMapActionsListener mCallback;
+	private ArrayList<Place> places;
+	private boolean progressDialogWasShowing;
 
 	public interface OnMapActionsListener {
 		public void onAddPlaceClicked();
@@ -61,7 +64,7 @@ public class MapFragment extends Fragment implements LocationCallback, OnMarkerC
 	@Override
 	public void onAttach(Activity activity) {
 		super.onAttach(activity);
-		
+
 		try {
 			mCallback = (OnMapActionsListener) activity;
 		} catch (ClassCastException e) {
@@ -76,7 +79,52 @@ public class MapFragment extends Fragment implements LocationCallback, OnMarkerC
 
 		mContext = getActivity();
 		setHasOptionsMenu(true);
-		getPlacesNearby();
+
+		if (savedInstanceState != null) {
+			latitude = savedInstanceState.getDouble(LATITUDE_KEY);
+			longitude = savedInstanceState.getDouble(LONGITUDE_KEY);
+
+			if (savedInstanceState.containsKey(PLACES_KEY)) {
+				places = savedInstanceState.getParcelableArrayList(PLACES_KEY);
+
+				if (places == null) {
+					getPlacesNearby();
+				}
+			}
+		} else {
+			getPlacesNearby();
+		}
+	}
+
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		if (places != null && places.size() > 0) {
+			outState.putParcelableArrayList(PLACES_KEY, places);
+		}
+		outState.putDouble(LONGITUDE_KEY, longitude);
+		outState.putDouble(LATITUDE_KEY, latitude);
+
+		super.onSaveInstanceState(outState);
+	}
+
+	@Override
+	public void onPause() {
+		if (progressDialog != null && progressDialog.isShowing()) {
+			progressDialogWasShowing = true;
+			progressDialog.dismiss();
+		} else {
+			progressDialogWasShowing = false;
+		}
+
+		super.onPause();
+	}
+
+	@Override
+	public void onResume() {
+		if (progressDialogWasShowing) {
+			progressDialog.show();
+		}
+		super.onResume();
 	}
 
 	@Override
@@ -102,37 +150,33 @@ public class MapFragment extends Fragment implements LocationCallback, OnMarkerC
 		if (container == null) {
 			return null;
 		}
-		view = (RelativeLayout) inflater.inflate(R.layout.map_fragment,
+
+		View view = (RelativeLayout) inflater.inflate(R.layout.map_fragment,
 				container, false);
-		setUpMapIfNeeded();
+		setUpMap();
 
 		return view;
 	}
 
-	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		setRetainInstance(true);
-		super.onActivityCreated(savedInstanceState);
-	}
-
-	private void setUpMapIfNeeded() {
+	private void setUpMap() {
 		if (mMap == null) {
 			mMap = ((SupportMapFragment) getActivity()
 					.getSupportFragmentManager().findFragmentById(
 							R.id.location_map)).getMap();
 
-			if (mMap != null)
-				setUpMap();
+			if (mMap != null) {
+				mMap.setMyLocationEnabled(true);
+				mMap.setOnMarkerClickListener(this);
+			}
+		}
+
+		if (places != null) {
+			addMarkersToMap(places);
 		}
 	}
 
-	private void setUpMap() {
-		mMap.setMyLocationEnabled(true);
-		mMap.setOnMarkerClickListener(this);
-	}
-
 	private void getPlacesNearby() {
-		progress = ProgressDialog.show(mContext,
+		progressDialog = ProgressDialog.show(mContext,
 				getString(R.string.loading_toilets),
 				getString(R.string.loading), true);
 
@@ -166,9 +210,9 @@ public class MapFragment extends Fragment implements LocationCallback, OnMarkerC
 	private void loadPlaces(double latitude, double longitude, int distance) {
 		// Signature
 		TreeMap<String, String> params = new TreeMap<String, String>();
-		params.put(LATITUDE_PARAM, Double.toString(latitude));
-		params.put(LONGITUDE_PARAM, Double.toString(longitude));
-		params.put(DISTANCE_PARAM, Integer.toString(distance));
+		params.put(LATITUDE_KEY, Double.toString(latitude));
+		params.put(LONGITUDE_KEY, Double.toString(longitude));
+		params.put(DISTANCE_KEY, Integer.toString(distance));
 
 		String signature = SignatureHelper.getSignature(params);
 
@@ -176,8 +220,7 @@ public class MapFragment extends Fragment implements LocationCallback, OnMarkerC
 		RequestQueue queue = VolleySingleton.getInstance(mContext)
 				.getRequestQueue();
 
-		String uri = String
-				.format("http://challenge.itpservices.be/place?latitude=%s&longitude=%s&distance=%s&signature=%s",
+		String uri = String.format("http://challenge.itpservices.be/place?latitude=%s&longitude=%s&distance=%s&signature=%s",
 						latitude, longitude, distance, signature);
 
 		GsonRequest<PlacesResponse> req = new GsonRequest<PlacesResponse>(
@@ -192,9 +235,10 @@ public class MapFragment extends Fragment implements LocationCallback, OnMarkerC
 
 			@Override
 			public void onResponse(PlacesResponse response) {
-				progress.dismiss();
+				progressDialog.dismiss();
 
 				if (response.isSuccess()) {
+					places = response.getPlaces();
 					addMarkersToMap(response.getPlaces());
 				}
 			}
@@ -203,21 +247,16 @@ public class MapFragment extends Fragment implements LocationCallback, OnMarkerC
 
 	protected void addMarkersToMap(ArrayList<Place> places) {
 		for (Place place : places) {
-			LatLng location = new LatLng(place.getLatitude(),
-					place.getLongitude());
-
 			int iconResource;
-			
-			if(place.isPublic()){
+
+			if (place.isPublic()) {
 				iconResource = R.drawable.ic_toilets_public;
-			}else{
+			} else {
 				iconResource = R.drawable.ic_toilets;
 			}
-			
-			mMap.addMarker(new MarkerOptions()
-					.position(location)
-					.title(place.getName())
-					.snippet(place.getAddress())
+
+			mMap.addMarker(new MarkerOptions().position(place.getLatLng())
+					.title(place.getName()).snippet(place.getAddress())
 					.icon(BitmapDescriptorFactory.fromResource(iconResource)));
 		}
 	}
@@ -233,16 +272,11 @@ public class MapFragment extends Fragment implements LocationCallback, OnMarkerC
 
 			@Override
 			public void onErrorResponse(VolleyError error) {
-				progress.dismiss();
+				progressDialog.dismiss();
 				Toast.makeText(mContext, getString(R.string.error),
 						Toast.LENGTH_LONG).show();
 			}
 		};
 	}
 
-	@Override
-	public void onDestroyView() {
-		super.onDestroyView();
-		mMap = null;
-	}
 }
