@@ -10,4 +10,8 @@
 	<string name="error">Er is iets misgelopen.</string>
 	<string name="name_hint">Naam</string>
 	<string name="address_hint">Straat</string>
+	<string name="zipcode_hint">Zipcode</string>
+	<string name="city_hint">Stad/dorp</string>
+	<string name="public_hint">Publieke plaats</string>
+	
 </resources>
