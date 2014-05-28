@@ -1,4 +1,4 @@
-package Responses;
+package responses;
 
 import com.example.itpappchallenge.Place;
 

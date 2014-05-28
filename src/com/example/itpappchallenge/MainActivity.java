@@ -3,7 +3,8 @@ package com.example.itpappchallenge;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
-import Responses.PlacesResponse;
+import responses.PlacesResponse;
+
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.location.Location;

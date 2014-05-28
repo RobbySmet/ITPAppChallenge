@@ -5,7 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import Responses.NewPlaceResponse;
+import responses.NewPlaceResponse;
+
 import android.app.Activity;
 import android.location.Address;
 import android.location.Geocoder;
